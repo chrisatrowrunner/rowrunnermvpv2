@@ -11,7 +11,8 @@ import {
   type ReactNode,
 } from 'react'
 import { vendorsFor, locForVendor, SEAT } from '../data/menu'
-import { submitOrder } from '../lib/orders'
+import { submitOrder, fetchOrderStatus } from '../lib/orders'
+import { hasSupabase } from '../lib/supabase'
 import type {
   CartLine,
   Category,
@@ -91,7 +92,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [category, setCategory] = useState<Category>('food')
   const [cart, setCart] = useState<CartLine[]>([])
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null)
-  const [orderNo] = useState(4821)
+  const [orderNo, setOrderNo] = useState(4821)
+  const [orderId, setOrderId] = useState<string | null>(null)
   const [stage, setStage] = useState(0)
   const [eta, setEta] = useState(0)
   const [active, setActive] = useState(false)
@@ -121,10 +123,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   // ── live order engine ──
-  // Simulates the kitchen → runner → delivered progression. In production this
-  // effect is replaced by a Supabase Realtime subscription on the order row.
+  // With Supabase, the order's progress is driven entirely by the RUNNER:
+  // claim → "picked up", deliver → "delivered". We poll the order's real status
+  // and reflect it; nothing advances on its own. The displayed ETA is a fixed
+  // estimate set at checkout (there's no real ETA until a runner is moving).
+  // Without Supabase (edge/standalone demo) we fall back to a simulated engine.
   useEffect(() => {
     if (!active) return
+
+    if (hasSupabase && orderId) {
+      let alive = true
+      const poll = async () => {
+        const st = await fetchOrderStatus(orderId)
+        if (!alive || !st) return
+        if (st.orderNo) setOrderNo(st.orderNo)
+        setStage(st.stage)
+        if (st.stage >= 4) {
+          alive = false
+          setActive(false)
+          setEta(0)
+          if (screenRef.current === 'track' || screenRef.current === 'confirm') {
+            setTimeout(() => go('done'), 1100)
+          }
+        }
+      }
+      poll()
+      const id = setInterval(poll, 3000)
+      return () => {
+        alive = false
+        clearInterval(id)
+      }
+    }
+
+    // fallback: local simulated progression (no backend)
     const dur = SPEEDS[CONFIG.demoSpeed]
     const id = setInterval(() => {
       const p = Math.min(1, (Date.now() - startRef.current) / 1000 / dur)
@@ -142,7 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 250)
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active])
+  }, [active, orderId])
 
   // ── cart ──
   const addToCart = (line: NewLine) =>
@@ -217,11 +248,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEta(etaStartRef.current)
     setActive(true)
 
-    // Send the order to the shared edge server so the runner app picks it up.
+    // Generate the id client-side so we can poll this order's status as an
+    // anonymous fan (we can't read it back from the table under hardened RLS).
+    const id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : 'ord_' + Date.now() + Math.random().toString(36).slice(2)
+    setOrderId(id)
+
+    // Send the order to the shared backend so the runner app picks it up.
     // The runner picks up from the order's slowest (primary) stand.
     const grouped = stands()
     const primary = grouped[grouped.length - 1]
     submitOrder({
+      id,
       venueId: import.meta.env.VITE_VENUE_ID || 'nyc-tech-week',
       seat: SEAT,
       stand: primary
@@ -244,6 +284,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(0)
     setEta(0)
     setActive(false)
+    setOrderId(null)
     hist.current = []
     setScreen('menu')
   }
@@ -254,6 +295,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(0)
     setEta(0)
     setActive(false)
+    setOrderId(null)
     hist.current = []
     setScreen('landing')
   }

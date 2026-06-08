@@ -67,11 +67,21 @@ const EDGE_URL = import.meta.env.VITE_EDGE_URL || 'http://localhost:4000'
 
 /** What the runner app needs to see for an order, derived at submit time. */
 export interface EdgeOrderInput {
+  /** client-generated id, so the (anon) fan can poll its own order's status */
+  id: string
   venueId: string
   seat: Seat
   /** where the runner picks up — the order's primary (slowest) stand */
   stand: { name: string; loc: string }
   lines: Array<{ name: string; qty: number; option: string | null; addons: string[] }>
+}
+
+/** Live status of a single order, as the fan tracking screen reads it. */
+export interface OrderStatus {
+  /** 0 received · 1 preparing · 2 picked up · 3 on the way · 4 delivered */
+  stage: number
+  orderNo: number
+  runnerName: string | null
 }
 
 /**
@@ -93,6 +103,7 @@ export async function submitOrder(input: EdgeOrderInput): Promise<void> {
     // later needs the real order number, expose a security-definer RPC that
     // inserts and returns it — that works for anon without opening reads.)
     const { error } = await sb.from('orders').insert({
+      id: input.id,
       venue_id: input.venueId,
       seat: input.seat,
       stand: input.stand,
@@ -110,6 +121,28 @@ export async function submitOrder(input: EdgeOrderInput): Promise<void> {
     body: JSON.stringify(input),
   })
   if (!res.ok) throw new Error(`edge submit failed: ${res.status}`)
+}
+
+/**
+ * Read one order's live status. Anon (fans) can't SELECT the orders table under
+ * the hardened RLS, so this calls a security-definer RPC (`order_status`) that
+ * returns just this one order by id — the fan knows the id because it generated
+ * it at submit time. Returns null if not found / not yet readable.
+ */
+export async function fetchOrderStatus(id: string): Promise<OrderStatus | null> {
+  if (hasSupabase) {
+    const sb = getSupabase()
+    const { data, error } = await sb.rpc('order_status', { p_id: id })
+    const row = Array.isArray(data) ? data[0] : data
+    if (error || !row) return null
+    return { stage: row.stage, orderNo: row.order_no, runnerName: row.runner_name }
+  }
+  // edge fallback (pilot stand-in)
+  const res = await fetch(`${EDGE_URL}/orders`)
+  if (!res.ok) return null
+  const all = (await res.json()) as Array<{ id: string; stage: number; orderNo: number; runnerName: string | null }>
+  const o = all.find((x) => x.id === id)
+  return o ? { stage: o.stage, orderNo: o.orderNo, runnerName: o.runnerName } : null
 }
 
 /**
