@@ -10,7 +10,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { vendorsFor } from '../data/menu'
+import { vendorsFor, locForVendor, SEAT } from '../data/menu'
+import { submitOrder } from '../lib/orders'
 import type {
   CartLine,
   Category,
@@ -215,6 +216,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(1)
     setEta(etaStartRef.current)
     setActive(true)
+
+    // Send the order to the shared edge server so the runner app picks it up.
+    // The runner picks up from the order's slowest (primary) stand.
+    const grouped = stands()
+    const primary = grouped[grouped.length - 1]
+    submitOrder({
+      venueId: import.meta.env.VITE_VENUE_ID || 'nyc-tech-week',
+      seat: SEAT,
+      stand: primary
+        ? { name: primary.vendor, loc: locForVendor(primary.vendor) }
+        : { name: 'Concession', loc: '' },
+      lines: cart.map((l) => ({
+        name: l.item.name,
+        qty: l.qty,
+        option: l.option,
+        addons: l.addons,
+      })),
+    }).catch(() => toast('Saved locally — runner sync offline'))
+
     go('confirm')
   }
 

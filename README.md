@@ -49,8 +49,11 @@ Vendors-per-item, their ETAs, and dietary tags live in `src/data/menu.ts`
 (`vendorsFor`, `dietFor`) — deterministic stand-ins for the Supabase data.
 
 The order lifecycle (received → preparing → picked up → on the way → delivered)
-runs on a local **simulated engine** so the whole flow is clickable with no
-backend. In production that engine is replaced by Supabase Realtime — see below.
+runs on a local **simulated engine** so the fan's own tracking screen is
+clickable with no backend. Separately, placing an order **POSTs it to the shared
+[edge server](../rowrunner-edge)** so the [runner dispatch app](../rowrunner-runner)
+can claim and deliver it — that's the live cross-app link. In production both the
+edge POST and the status engine are backed by Supabase Realtime — see below.
 
 ## Project structure
 
@@ -62,7 +65,7 @@ src/
   types.ts            domain types (MenuItem, CartLine, Totals, …)
   data/menu.ts        venue, seat, menu, tints  (← swap for a Supabase fetch)
   store/store.tsx     cart, totals, nav, and the simulated order engine
-  lib/orders.ts       backend integration seam (typed, documented, not yet wired)
+  lib/orders.ts       backend seam — submitOrder() POSTs to the shared edge server
   components/         Icon, ui kit (CTA, header, stepper, tile, tag, confetti), StatusTracker
   screens/            Landing, Menu, ItemDetail, Cart, Checkout, Confirm, Track, Done
 public/assets/        logo lockups + bird marks (navy / white)

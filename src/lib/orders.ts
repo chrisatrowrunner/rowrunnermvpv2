@@ -9,6 +9,7 @@
 // Nothing here is imported by the demo yet — it's a typed contract + reference
 // implementation. Wire `submitOrder` into `store.placeOrder()` when ready.
 import type { CartLine, Seat, Totals } from '../types'
+import { getSupabase, hasSupabase } from './supabase'
 
 /** What the client sends to create an order. */
 export interface OrderPayload {
@@ -61,37 +62,54 @@ export function toPayload(
   }
 }
 
+/** Base URL of the in-venue edge server (the shared order bus). */
+const EDGE_URL = import.meta.env.VITE_EDGE_URL || 'http://localhost:4000'
+
+/** What the runner app needs to see for an order, derived at submit time. */
+export interface EdgeOrderInput {
+  venueId: string
+  seat: Seat
+  /** where the runner picks up — the order's primary (slowest) stand */
+  stand: { name: string; loc: string }
+  lines: Array<{ name: string; qty: number; option: string | null; addons: string[] }>
+}
+
 /**
- * Reference implementation — replace the body with a real call.
+ * Place an order on the shared edge server so the runner dispatch app sees it.
  *
- * Edge-first design: the device POSTs to the in-venue Express server (which
- * owns the Brother QL label printer and the kitchen queue) and mirrors to
- * Supabase when connectivity allows. The KDS reads the same Supabase row and
- * fans status changes back to this client via Supabase Realtime.
+ * Edge-first design (per the architecture): the device POSTs to the in-venue
+ * Express server, which owns the label printer + kitchen queue and mirrors to
+ * Supabase. The runner app reads the same row and claims/delivers it; the KDS
+ * fans status changes back here. For the pilot, `rowrunner-edge` is that server.
  *
- *   POST {EDGE_URL}/orders            -> { id, orderNo }
- *   supabase.channel(`order:${id}`)   -> stage / etaSec updates
- *
- * Example (uncomment once @supabase/supabase-js is installed):
- *
- *   import { createClient } from '@supabase/supabase-js'
- *   const supabase = createClient(
- *     import.meta.env.VITE_SUPABASE_URL,
- *     import.meta.env.VITE_SUPABASE_ANON_KEY,
- *   )
- *   const res = await fetch(`${EDGE_URL}/orders`, {
- *     method: 'POST',
- *     headers: { 'content-type': 'application/json' },
- *     body: JSON.stringify(payload),
- *   })
- *   return res.json()
+ * Swap to Supabase later by replacing this fetch with an insert into `orders`.
  */
-export async function submitOrder(payload: OrderPayload): Promise<OrderRecord> {
-  void payload
-  throw new Error(
-    'submitOrder is a backend seam — wire it to the Express/Supabase edge server. ' +
-      'The demo flow uses the local simulator in store.tsx.',
-  )
+export async function submitOrder(input: EdgeOrderInput): Promise<void> {
+  // Supabase when configured — the shared production backend.
+  if (hasSupabase) {
+    const sb = getSupabase()
+    // No .select() back: under hardened RLS the anon (fan) role can insert but
+    // cannot read, so we must not request the row in return. (If the fan UI
+    // later needs the real order number, expose a security-definer RPC that
+    // inserts and returns it — that works for anon without opening reads.)
+    const { error } = await sb.from('orders').insert({
+      venue_id: input.venueId,
+      seat: input.seat,
+      stand: input.stand,
+      lines: input.lines,
+      stage: 1,
+    })
+    if (error) throw error
+    return
+  }
+
+  // else fall back to the local edge server (the pilot stand-in).
+  const res = await fetch(`${EDGE_URL}/orders`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`edge submit failed: ${res.status}`)
 }
 
 /**

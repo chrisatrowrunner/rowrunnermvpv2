@@ -256,6 +256,12 @@ export function dietFor(id: string): string[] {
   return DIET[id] ?? []
 }
 
+/** Look up a vendor's human location by its display name (for the runner feed). */
+export function locForVendor(name: string): string {
+  const all = Object.values(VENDOR_POOL).flat() as Restaurant[]
+  return all.find((v) => v.name === name)?.loc ?? ''
+}
+
 // ── Per-vendor menus ─────────────────────────────────────────
 // Items whose flavor/sauce choice is the vendor's to riff on. (Structural
 // choices like size, temperature, or crust stay the same everywhere.)
