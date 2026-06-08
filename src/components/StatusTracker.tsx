@@ -4,27 +4,34 @@ import { Icon } from './Icon'
 export const STEPS = [
   { key: 'received', label: 'Order received', note: 'We sent it to the kitchen' },
   { key: 'prep', label: 'Being prepared', note: 'Your runner is standing by' },
-  { key: 'pickup', label: 'Picked up by runner', note: 'Sarah grabbed your order' },
-  { key: 'otw', label: 'On the way', note: 'Heading to your section' },
+  { key: 'pickup', label: 'Picked up by runner', note: 'On the way to your seat' },
   { key: 'delivered', label: 'Delivered', note: 'Enjoy the game!' },
 ] as const
 
 export const LOCS = [
   'Kitchen · Stand 4',
   'Kitchen · Stand 4',
-  'Section 118 · concourse',
-  'Section 109 — heading your way',
+  'On the way to your section',
   'At your seat',
 ]
+
+/**
+ * Map the order's raw stage to a tracker step index. The backend lifecycle
+ * still numbers delivered as 4 (0 received · 1 preparing · 2 picked up · 4
+ * delivered); the "on the way" step was removed (a pickup implies it), so any
+ * stage above "picked up" collapses down by one to keep the 4 steps aligned.
+ */
+export const toStep = (stage: number): number => (stage <= 2 ? stage : stage - 1)
 
 export function StatusTracker({ stage, dark }: { stage: number; dark?: boolean }) {
   const txt = dark ? '#fff' : 'var(--navy)'
   const mut = dark ? 'rgba(255,255,255,.55)' : 'var(--muted)'
+  const step = toStep(stage)
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {STEPS.map((s, i) => {
-        const done = i < stage
-        const active = i === stage
+        const done = i < step
+        const active = i === step
         const color = done ? 'var(--green)' : active ? 'var(--amber)' : dark ? 'rgba(255,255,255,.22)' : 'var(--line)'
         return (
           <div key={s.key} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>

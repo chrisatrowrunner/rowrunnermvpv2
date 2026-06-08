@@ -2,7 +2,7 @@
 import { useStore } from '../store/store'
 import { Icon } from '../components/Icon'
 import { AppHeader, RoundBtn } from '../components/ui'
-import { StatusTracker, STEPS, LOCS } from '../components/StatusTracker'
+import { StatusTracker, STEPS, LOCS, toStep } from '../components/StatusTracker'
 
 export function TrackScreen() {
   const s = useStore()
@@ -21,7 +21,7 @@ export function TrackScreen() {
           <RoundBtn icon="back" label="Back" onClick={() => s.nav('menu')} />
           <div>
             <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800 }}>Order #{s.orderNo}</h1>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,.6)' }}>{STEPS[stage].label}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: 'rgba(255,255,255,.6)' }}>{STEPS[toStep(stage)]?.label}</div>
           </div>
           <span
             style={{
@@ -56,7 +56,7 @@ export function TrackScreen() {
             {!arrived && <span style={{ fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,.85)' }}>{mins > 0 ? 'min' : 'sec'}</span>}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 14, fontSize: 13.5, fontWeight: 700, background: 'rgba(255,255,255,.10)', padding: '7px 12px', borderRadius: 999 }}>
-            <span style={{ animation: 'rr-run 1s infinite' }}>🏃</span> {LOCS[stage]}
+            <span style={{ animation: 'rr-run 1s infinite' }}>🏃</span> {LOCS[toStep(stage)]}
           </div>
         </div>
 
