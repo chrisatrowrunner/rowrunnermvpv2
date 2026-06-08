@@ -72,10 +72,17 @@ export interface Store {
   totals: () => Totals
   /** the order grouped by stand, fastest-first */
   stands: () => Stand[]
+  // customer identity
+  customerName: string
+  setCustomerName: (n: string) => void
   // order lifecycle
   orderNo: number
   orderStage: number
   etaSec: number
+  /** 6-digit code the guest shows the runner to confirm delivery */
+  orderCode: string | null
+  /** name of the runner delivering, once they've claimed it */
+  runnerName: string | null
   placeOrder: () => void
   reset: () => void
   exit: () => void
@@ -84,6 +91,9 @@ export interface Store {
   toast: (msg: string) => void
   toastMsg: string | null
 }
+
+/** localStorage key for resuming an in-flight order's tracker + handoff code. */
+const ACTIVE_KEY = 'rr.fan.activeOrder'
 
 const StoreContext = createContext<Store | null>(null)
 
@@ -94,6 +104,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null)
   const [orderNo, setOrderNo] = useState(4821)
   const [orderId, setOrderId] = useState<string | null>(null)
+  const [orderCode, setOrderCode] = useState<string | null>(null)
+  const [runnerName, setRunnerName] = useState<string | null>(null)
+  const [customerName, setCustomerName] = useState('')
   const [stage, setStage] = useState(0)
   const [eta, setEta] = useState(0)
   const [active, setActive] = useState(false)
@@ -137,11 +150,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const st = await fetchOrderStatus(orderId)
         if (!alive || !st) return
         if (st.orderNo) setOrderNo(st.orderNo)
+        setRunnerName(st.runnerName)
         setStage(st.stage)
         if (st.stage >= 4) {
           alive = false
           setActive(false)
           setEta(0)
+          try {
+            localStorage.removeItem(ACTIVE_KEY)
+          } catch {
+            /* ignore */
+          }
           if (screenRef.current === 'track' || screenRef.current === 'confirm') {
             setTimeout(() => go('done'), 1100)
           }
@@ -174,6 +193,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, orderId])
+
+  // ── resume an in-flight order after a refresh ──
+  // Reattaches the tracker + handoff code so the guest doesn't lose them if the
+  // page reloads while waiting. The poll above takes over from here.
+  useEffect(() => {
+    let saved: { id?: string; code?: string; customerName?: string } | null = null
+    try {
+      saved = JSON.parse(localStorage.getItem(ACTIVE_KEY) || 'null')
+    } catch {
+      saved = null
+    }
+    if (!saved?.id) return
+    setOrderId(saved.id)
+    setOrderCode(saved.code ?? null)
+    if (saved.customerName) setCustomerName(saved.customerName)
+    setStage(1)
+    setEta(etaStartRef.current)
+    setActive(true)
+    setScreen('track')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── cart ──
   const addToCart = (line: NewLine) =>
@@ -240,6 +280,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   const placeOrder = () => {
+    const name = customerName.trim()
+    if (!name) {
+      toast('Add your name so the runner knows who to find')
+      return
+    }
+
     // The order is delivered when the slowest stand arrives.
     const slowest = cart.reduce((m, l) => Math.max(m, l.etaMin), 0)
     etaStartRef.current = Math.max(60, slowest * 60)
@@ -247,6 +293,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(1)
     setEta(etaStartRef.current)
     setActive(true)
+    setRunnerName(null)
 
     // Generate the id client-side so we can poll this order's status as an
     // anonymous fan (we can't read it back from the table under hardened RLS).
@@ -254,7 +301,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()
         : 'ord_' + Date.now() + Math.random().toString(36).slice(2)
+    // 6-digit handoff code the guest shows the runner at delivery.
+    const code = String(Math.floor(100000 + Math.random() * 900000))
     setOrderId(id)
+    setOrderCode(code)
+    // Persist so a refresh keeps showing the tracker + code (handoff may be
+    // minutes later). Cleared on reset/exit.
+    try {
+      localStorage.setItem(ACTIVE_KEY, JSON.stringify({ id, code, customerName: name }))
+    } catch {
+      /* ignore */
+    }
 
     // Send the order to the shared backend so the runner app picks it up.
     // The runner picks up from the order's slowest (primary) stand.
@@ -263,6 +320,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     submitOrder({
       id,
       venueId: import.meta.env.VITE_VENUE_ID || 'nyc-tech-week',
+      customerName: name,
+      code,
       seat: SEAT,
       stand: primary
         ? { name: primary.vendor, loc: locForVendor(primary.vendor) }
@@ -278,13 +337,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     go('confirm')
   }
 
+  const clearActive = () => {
+    setOrderId(null)
+    setOrderCode(null)
+    setRunnerName(null)
+    try {
+      localStorage.removeItem(ACTIVE_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
+
   // "Order again" — clear the order, go back to browsing.
   const reset = () => {
     setCart([])
     setStage(0)
     setEta(0)
     setActive(false)
-    setOrderId(null)
+    clearActive()
     hist.current = []
     setScreen('menu')
   }
@@ -295,7 +365,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(0)
     setEta(0)
     setActive(false)
-    setOrderId(null)
+    clearActive()
     hist.current = []
     setScreen('landing')
   }
@@ -315,9 +385,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     removeLine,
     totals,
     stands,
+    customerName,
+    setCustomerName,
     orderNo,
     orderStage: stage,
     etaSec: eta,
+    orderCode,
+    runnerName,
     placeOrder,
     reset,
     exit,

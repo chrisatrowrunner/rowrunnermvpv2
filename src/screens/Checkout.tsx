@@ -31,6 +31,17 @@ export function CheckoutScreen() {
       </AppHeader>
 
       <div className="rr-scroll" style={{ flex: 1, overflow: 'auto', padding: '16px 16px 24px' }}>
+        {/* who's it for — shown to the runner */}
+        <SectionCard title="Your name" sub="So your runner knows who they're delivering to">
+          <input
+            value={s.customerName}
+            onChange={(e) => s.setCustomerName(e.target.value)}
+            placeholder="e.g. Alex"
+            autoComplete="given-name"
+            style={{ ...fieldStyle, width: '100%', height: 50 }}
+          />
+        </SectionCard>
+
         {/* collapsible order summary */}
         <div style={{ background: '#fff', borderRadius: 16, boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
           <button onClick={() => setOpenSummary((o) => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '15px 16px', textAlign: 'left' }}>

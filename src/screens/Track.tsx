@@ -60,35 +60,56 @@ export function TrackScreen() {
           </div>
         </div>
 
-        {/* runner card */}
+        {/* runner card — populated once a runner claims the order */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fff', borderRadius: 18, padding: '14px 16px', marginTop: 14, boxShadow: 'var(--shadow-card)' }}>
           <div
             style={{
               width: 52,
               height: 52,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg,#5BB8D4,#3AA3C2)',
+              background: s.runnerName ? 'linear-gradient(135deg,#5BB8D4,#3AA3C2)' : 'var(--offwhite)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: s.runnerName ? '#fff' : 'var(--faint)',
               fontWeight: 800,
               fontSize: 20,
               flex: '0 0 auto',
             }}
           >
-            S
+            {s.runnerName ? s.runnerName[0].toUpperCase() : '🏃'}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--navy)' }}>Sarah · Your runner</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, color: 'var(--muted)', fontSize: 13, fontWeight: 700 }}>
-              <Icon name="star" size={14} style={{ color: 'var(--amber)' }} /> 4.9 · 1,240 deliveries
+            {s.runnerName ? (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--navy)' }}>{s.runnerName} · Your runner</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, color: 'var(--muted)', fontSize: 13, fontWeight: 700 }}>
+                  <Icon name="star" size={14} style={{ color: 'var(--amber)' }} /> On the way to you
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--navy)' }}>Finding your runner…</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)', marginTop: 2 }}>We'll assign one shortly</div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* handoff code — guest reads this to the runner at delivery */}
+        {s.orderCode && !arrived && (
+          <div style={{ background: 'var(--navy)', borderRadius: 18, padding: '16px 18px', marginTop: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)' }}>
+              Your pickup code
+            </div>
+            <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: 8, color: 'var(--ice)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>
+              {s.orderCode}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>
+              Give this to your runner to confirm delivery
             </div>
           </div>
-          <button onClick={() => s.toast('Messaging Sarah…')} style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--offwhite)', color: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="help" size={20} />
-          </button>
-        </div>
+        )}
 
         {/* per-stand live ETAs — faster stands land before the full order */}
         {stands.length > 1 && (

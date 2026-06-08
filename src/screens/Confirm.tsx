@@ -56,6 +56,21 @@ export function ConfirmScreen() {
           </div>
         </div>
 
+        {/* handoff code — guest shows this to the runner at delivery */}
+        {s.orderCode && (
+          <div style={{ width: '100%', background: 'rgba(91,184,212,.12)', border: '1px solid rgba(91,184,212,.35)', borderRadius: 18, padding: '16px 18px', marginTop: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,.6)' }}>
+              Your pickup code
+            </div>
+            <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: 8, color: 'var(--ice)', fontVariantNumeric: 'tabular-nums', marginTop: 4 }}>
+              {s.orderCode}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>
+              Show this to your runner to confirm delivery
+            </div>
+          </div>
+        )}
+
         {/* per-stand breakdown when the order spans multiple stands */}
         {stands.length > 1 && (
           <div style={{ width: '100%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.10)', borderRadius: 18, padding: '14px 16px', marginTop: 14 }}>
