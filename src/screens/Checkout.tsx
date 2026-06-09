@@ -100,6 +100,33 @@ export function CheckoutScreen() {
           )}
         </SectionCard>
 
+        {/* special instructions / dietary notes */}
+        <SectionCard title="Special instructions" sub="Allergies, dietary needs, or a note for your runner">
+          <textarea
+            value={s.orderNotes}
+            onChange={(e) => s.setOrderNotes(e.target.value.slice(0, 200))}
+            placeholder="e.g. nut allergy — no peanuts; extra napkins please"
+            rows={3}
+            style={{
+              width: '100%',
+              resize: 'none',
+              border: 'none',
+              outline: 'none',
+              background: 'var(--offwhite)',
+              borderRadius: 12,
+              padding: '12px 14px',
+              fontSize: 15,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              color: 'var(--navy)',
+              lineHeight: 1.4,
+            }}
+          />
+          <div style={{ textAlign: 'right', fontSize: 11.5, fontWeight: 700, color: 'var(--faint)', marginTop: 4 }}>
+            {s.orderNotes.length}/200
+          </div>
+        </SectionCard>
+
         {/* payment */}
         <SectionCard title="Payment">
           <button

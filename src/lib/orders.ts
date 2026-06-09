@@ -74,6 +74,8 @@ export interface EdgeOrderInput {
   customerName: string
   /** 6-digit handoff code the runner must enter to confirm delivery */
   code: string
+  /** special instructions / dietary notes from the guest (may be empty) */
+  notes: string
   seat: Seat
   /** where the runner picks up — the order's primary (slowest) stand */
   stand: { name: string; loc: string }
@@ -111,6 +113,7 @@ export async function submitOrder(input: EdgeOrderInput): Promise<void> {
       venue_id: input.venueId,
       customer_name: input.customerName,
       code: input.code,
+      notes: input.notes || null,
       seat: input.seat,
       stand: input.stand,
       lines: input.lines,

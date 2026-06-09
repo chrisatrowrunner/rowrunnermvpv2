@@ -75,6 +75,9 @@ export interface Store {
   // customer identity
   customerName: string
   setCustomerName: (n: string) => void
+  /** special instructions / dietary notes for the runner (free text) */
+  orderNotes: string
+  setOrderNotes: (n: string) => void
   // order lifecycle
   orderNo: number
   orderStage: number
@@ -107,6 +110,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [orderCode, setOrderCode] = useState<string | null>(null)
   const [runnerName, setRunnerName] = useState<string | null>(null)
   const [customerName, setCustomerName] = useState('')
+  const [orderNotes, setOrderNotes] = useState('')
   const [stage, setStage] = useState(0)
   const [eta, setEta] = useState(0)
   const [active, setActive] = useState(false)
@@ -322,6 +326,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       venueId: import.meta.env.VITE_VENUE_ID || 'nyc-tech-week',
       customerName: name,
       code,
+      notes: orderNotes.trim(),
       seat: SEAT,
       stand: primary
         ? { name: primary.vendor, loc: locForVendor(primary.vendor) }
@@ -354,6 +359,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(0)
     setEta(0)
     setActive(false)
+    setOrderNotes('')
     clearActive()
     hist.current = []
     setScreen('menu')
@@ -365,6 +371,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setStage(0)
     setEta(0)
     setActive(false)
+    setOrderNotes('')
     clearActive()
     hist.current = []
     setScreen('landing')
@@ -387,6 +394,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     stands,
     customerName,
     setCustomerName,
+    orderNotes,
+    setOrderNotes,
     orderNo,
     orderStage: stage,
     etaSec: eta,
