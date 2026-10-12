@@ -1,7 +1,5 @@
 // Shared domain types for the RowRunner fan ordering flow.
 
-export type Category = 'food' | 'drinks' | 'merch'
-
 export type TintKey =
   | 'peach'
   | 'butter'
@@ -36,7 +34,8 @@ export interface MenuItem {
   name: string
   emoji: string
   price: number
-  eta: string
+  /** prep + delivery estimate in minutes */
+  etaMin: number
   tint: TintKey
   tag: string | null
   desc: string
@@ -44,12 +43,43 @@ export interface MenuItem {
   addons: Addon[]
 }
 
-export type Menu = Record<Category, MenuItem[]>
-
+/**
+ * Where to deliver. Shared shape with the runner app, KDS, and label printer
+ * (stored as `orders.seat` jsonb).
+ *
+ * Numbered venues fill section/row/seat. Zone venues (unnumbered seating, e.g.
+ * the URI Soccer Complex) also set `zone` + `label` + `detail`; every reader
+ * shows `label`/`detail` when present and falls back to section/row/seat.
+ */
 export interface Seat {
   section: string
   row: string
   seat: string
+  /** zone id the guest tapped on the venue map, e.g. "A2" or "B" */
+  zone?: string
+  /** primary line, e.g. "Section A2" */
+  label?: string
+  /** secondary line, e.g. "South bleachers" */
+  detail?: string
+}
+
+/** A tappable area on a zone venue's map. */
+export interface Zone {
+  id: string
+  label: string
+  detail: string
+  kind: 'bleacher' | 'standing'
+}
+
+export interface Restaurant {
+  id: string
+  name: string
+  /** pickup location the runner sees */
+  loc: string
+  /** short descriptor under the name */
+  blurb: string
+  /** logo in public/assets; a monogram shows until the file exists */
+  logo: string
 }
 
 export interface Venue {
@@ -84,6 +114,7 @@ export interface Totals {
 
 export type Screen =
   | 'landing'
+  | 'zone'
   | 'menu'
   | 'item'
   | 'cart'

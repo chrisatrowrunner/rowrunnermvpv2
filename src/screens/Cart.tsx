@@ -1,7 +1,8 @@
 // Cart.tsx — Screen 4: line items, live fee math, swipe-to-remove.
 import { useRef, useState } from 'react'
 import { useStore } from '../store/store'
-import { money, SEAT } from '../data/menu'
+import { money } from '../data/menu'
+import { seatLines } from '../lib/seat'
 import { Icon } from '../components/Icon'
 import { AppHeader, RoundBtn, SeatPill, FoodTile, QtyStepper, BottomDock, CTA } from '../components/ui'
 import type { CartLine } from '../types'
@@ -18,9 +19,11 @@ export function CartScreen() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <RoundBtn icon="back" label="Back" onClick={s.back} />
           <h1 style={{ margin: 0, fontSize: 21, fontWeight: 800 }}>Your Order</h1>
-          <span style={{ marginLeft: 'auto' }}>
-            <SeatPill seat={SEAT} />
-          </span>
+          {s.seat && (
+            <span style={{ marginLeft: 'auto' }}>
+              <SeatPill seat={s.seat} onClick={() => s.nav('zone')} />
+            </span>
+          )}
         </div>
       </AppHeader>
 
@@ -47,7 +50,7 @@ export function CartScreen() {
               Delivering to
             </div>
             <div style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--navy)', marginTop: 2 }}>
-              Section {SEAT.section} · Row {SEAT.row} · Seat {SEAT.seat}
+              {s.seat ? seatLines(s.seat).text : 'Pick your area on the map'}
             </div>
           </div>
         </div>
@@ -130,7 +133,7 @@ function CartRow({ line }: { line: CartLine }) {
     else setDx(0)
     start.current = null
   }
-  const sub = [line.vendor, line.option, ...line.addons].filter(Boolean).join(' · ')
+  const sub = [line.option, ...line.addons].filter(Boolean).join(' · ')
   return (
     <div style={{ position: 'relative', borderRadius: 'var(--r-card)', overflow: 'hidden' }}>
       {/* delete bg */}

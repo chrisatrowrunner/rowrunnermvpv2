@@ -2,6 +2,7 @@
 import { useRef, type CSSProperties, type ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
 import { TINTS } from '../data/menu'
+import { seatLines } from '../lib/seat'
 import type { Seat, TintKey } from '../types'
 
 // ── Status-bar-safe navy header ──────────────────────────────
@@ -70,7 +71,7 @@ export function RoundBtn({
   )
 }
 
-// seat pill (Sec 112 · G8)
+// seat pill ("Section A2" / "Sec 204 · J17")
 export function SeatPill({
   seat,
   onClick,
@@ -99,8 +100,7 @@ export function SeatPill({
       }}
     >
       <Icon name="pin" size={14} sw={2.4} />
-      Sec {seat.section} · {seat.row}
-      {seat.seat}
+      {seatLines(seat).short}
     </button>
   )
 }

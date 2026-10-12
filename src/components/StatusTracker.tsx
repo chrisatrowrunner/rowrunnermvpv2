@@ -1,5 +1,6 @@
 // StatusTracker.tsx — vertical order-progress tracker, shared by Confirm + Track.
 import { Icon } from './Icon'
+import { RESTAURANT } from '../data/menu'
 
 export const STEPS = [
   { key: 'received', label: 'Order received', note: 'We sent it to the kitchen' },
@@ -9,8 +10,8 @@ export const STEPS = [
 ] as const
 
 export const LOCS = [
-  'Kitchen · Stand 4',
-  'Kitchen · Stand 4',
+  `${RESTAURANT.name} · east gate`,
+  `${RESTAURANT.name} · east gate`,
   'On the way to your section',
   'At your seat',
 ]

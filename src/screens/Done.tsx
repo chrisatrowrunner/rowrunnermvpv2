@@ -44,7 +44,7 @@ export function DoneScreen() {
 
         {/* rating */}
         <div style={{ width: '100%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 20, padding: '20px', marginTop: 30, textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>How was Sarah's service?</div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>How was {s.runnerName ? `${s.runnerName}'s` : 'your runner’s'} service?</div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -83,7 +83,7 @@ export function DoneScreen() {
           </span>
         </div>
         <button
-          onClick={() => s.toast('Added an extra tip for Sarah — thank you!')}
+          onClick={() => s.toast(`Added an extra tip for ${s.runnerName ?? 'your runner'} — thank you!`)}
           style={{ width: '100%', marginTop: 12, fontSize: 14.5, fontWeight: 700, color: 'rgba(255,255,255,.7)' }}
         >
           Add a tip for your runner

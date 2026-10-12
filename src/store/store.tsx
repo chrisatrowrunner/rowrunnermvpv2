@@ -10,16 +10,17 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { vendorsFor, locForVendor, SEAT } from '../data/menu'
+import { RESTAURANT, seatForZone, zoneById } from '../data/menu'
 import { submitOrder, fetchOrderStatus } from '../lib/orders'
 import { hasSupabase } from '../lib/supabase'
 import type {
   CartLine,
-  Category,
   DemoSpeed,
   MenuItem,
   Screen,
+  Seat,
   Totals,
+  Zone,
 } from '../types'
 
 /** How long (seconds) the simulated delivery takes, by pace. */
@@ -60,9 +61,11 @@ export interface Store {
   nav: (s: Screen) => void
   back: () => void
   openItem: (item: MenuItem) => void
-  // menu
-  category: Category
-  setCategory: (c: Category) => void
+  // where to deliver — picked on the venue map
+  zone: Zone | null
+  /** the delivery destination for the picked zone (null until one is picked) */
+  seat: Seat | null
+  setZone: (id: string) => void
   // cart
   cart: CartLine[]
   addToCart: (line: NewLine) => void
@@ -102,7 +105,9 @@ const StoreContext = createContext<Store | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [screen, setScreen] = useState<Screen>('landing')
-  const [category, setCategory] = useState<Category>('food')
+  const [zoneId, setZoneId] = useState<string | null>(null)
+  const zone = zoneById(zoneId)
+  const seat = zone ? seatForZone(zone) : null
   const [cart, setCart] = useState<CartLine[]>([])
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null)
   const [orderNo, setOrderNo] = useState(4821)
@@ -238,12 +243,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const quickAdd = (item: MenuItem) => {
     const d = item.options ? item.options.choices[0].d : 0
-    const fastest = vendorsFor(item)[0] // fastest restaurant by default
     addToCart({
       item,
       qty: 1,
-      vendor: fastest ? fastest.name : '',
-      etaMin: fastest ? fastest.etaMin : 0,
+      vendor: RESTAURANT.name,
+      etaMin: item.etaMin,
       option: item.options ? item.options.choices[0].name : null,
       addons: [],
       lineTotal: item.price + d,
@@ -289,6 +293,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toast('Add your name so the runner knows who to find')
       return
     }
+    if (!seat) {
+      toast('Pick where you are on the map first')
+      go('zone')
+      return
+    }
 
     // The order is delivered when the slowest stand arrives.
     const slowest = cart.reduce((m, l) => Math.max(m, l.etaMin), 0)
@@ -318,19 +327,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     // Send the order to the shared backend so the runner app picks it up.
-    // The runner picks up from the order's slowest (primary) stand.
-    const grouped = stands()
-    const primary = grouped[grouped.length - 1]
+    // Single food truck for this pilot, so the runner always picks up there.
     submitOrder({
       id,
-      venueId: import.meta.env.VITE_VENUE_ID || 'nyc-tech-week',
+      venueId: import.meta.env.VITE_VENUE_ID || 'uri-mens-soccer',
       customerName: name,
       code,
       notes: orderNotes.trim(),
-      seat: SEAT,
-      stand: primary
-        ? { name: primary.vendor, loc: locForVendor(primary.vendor) }
-        : { name: 'Concession', loc: '' },
+      seat,
+      stand: { name: RESTAURANT.name, loc: RESTAURANT.loc },
       lines: cart.map((l) => ({
         name: l.item.name,
         qty: l.qty,
@@ -372,6 +377,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEta(0)
     setActive(false)
     setOrderNotes('')
+    setZoneId(null)
     clearActive()
     hist.current = []
     setScreen('landing')
@@ -383,8 +389,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     nav: go,
     back,
     openItem,
-    category,
-    setCategory,
+    zone,
+    seat,
+    setZone: setZoneId,
     cart,
     addToCart,
     quickAdd,

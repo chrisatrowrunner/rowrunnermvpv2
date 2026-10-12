@@ -2,6 +2,7 @@
 import { StoreProvider, useStore } from './store/store'
 import { Icon } from './components/Icon'
 import { LandingScreen } from './screens/Landing'
+import { ZonePickerScreen } from './screens/ZonePicker'
 import { MenuScreen } from './screens/Menu'
 import { ItemScreen } from './screens/ItemDetail'
 import { CartScreen } from './screens/Cart'
@@ -15,8 +16,11 @@ function Router() {
   switch (s.screen) {
     case 'landing':
       return <LandingScreen />
+    case 'zone':
+      return <ZonePickerScreen />
     case 'menu':
-      return <MenuScreen />
+      // the menu needs a delivery zone; send guests to the map if they skipped it
+      return s.zone ? <MenuScreen /> : <ZonePickerScreen />
     case 'item':
       // currentItem is always set before navigating to 'item'; fall back to menu.
       return s.currentItem ? <ItemScreen item={s.currentItem} /> : <MenuScreen />

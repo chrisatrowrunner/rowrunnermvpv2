@@ -73,7 +73,7 @@ export function CheckoutScreen() {
         </div>
 
         {/* tip */}
-        <SectionCard title="Tip your runner" sub="100% goes to Sarah & the runner crew">
+        <SectionCard title="Tip your runner" sub="100% goes to your runner">
           <div style={{ display: 'flex', gap: 9 }}>
             {TIPS.map((p, i) => (
               <button key={i} onClick={() => setTipSel(i)} style={tipBtn(tipSel === i)}>

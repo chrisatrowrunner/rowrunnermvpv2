@@ -5,8 +5,25 @@
 QR-based in-seat food, beverage, and merchandise ordering for live event venues.
 This repo is the **fan-facing ordering flow** — the eight screens a fan sees from
 QR scan to "your order has arrived" — implemented from the
-[Claude Design](https://claude.ai/design) handoff. The demo is themed for
-**NYC Tech Week** (The Glasshouse · Demo Day).
+[Claude Design](https://claude.ai/design) handoff.
+
+**Current build: URI vs. La Salle men's soccer pilot** — one food truck
+(Pam's Grill) and zone seating: guests tap where they are on a map of the URI
+Soccer Complex (south bleachers A0–A4, or standing zones B/C/D) because the
+seats aren't numbered. Venue, zones, and menu live in `src/data/menu.ts`.
+
+### Getting the NYC Tech Week version back
+The earlier multi-vendor build (NYC Tech Week: numbered seats, many restaurants,
+Food/Drinks/Merch) is preserved on the **`nyc-tech-week`** branch and the
+**`nyc-tech-week-v1`** tag:
+
+```bash
+git checkout nyc-tech-week          # look at / run it locally
+```
+
+To make it the live site again, merge or reset `main` to that branch and push
+(Netlify deploys `main`). The runner app, KDS, and label printer handle both
+numbered and zone seats, so they don't need to change back.
 
 | | |
 |---|---|

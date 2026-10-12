@@ -1,8 +1,6 @@
-// Landing.tsx — Screen 1: seat confirmation after the QR scan.
-import { Fragment } from 'react'
+// Landing.tsx — Screen 1: welcome after the QR scan.
 import { useStore } from '../store/store'
-import { VENUE, SEAT } from '../data/menu'
-import { Icon } from '../components/Icon'
+import { VENUE } from '../data/menu'
 import { CTA } from '../components/ui'
 
 // Served from public/assets at the site root.
@@ -56,17 +54,18 @@ export function LandingScreen() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: '92px 24px 0',
+          justifyContent: 'center',
+          padding: '48px 24px 0',
           position: 'relative',
           zIndex: 2,
         }}
       >
         <img src={logoWhite} alt="RowRunner" style={{ width: 208, marginBottom: 14, flexShrink: 0 }} />
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ice)', letterSpacing: 0.2, marginBottom: 40 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ice)', letterSpacing: 0.2, marginBottom: 44 }}>
           Skip the Line. Not the Game.
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: 8 }}>
+        <div style={{ textAlign: 'center' }}>
           <div
             style={{
               fontSize: 12.5,
@@ -78,81 +77,13 @@ export function LandingScreen() {
           >
             You're at
           </div>
-          <div style={{ fontSize: 23, fontWeight: 800, lineHeight: 1.2, marginTop: 6 }}>{VENUE.name}</div>
-          <div style={{ fontSize: 14.5, color: 'rgba(255,255,255,.7)', marginTop: 4, fontWeight: 600 }}>
-            {VENUE.event}
-          </div>
-        </div>
-
-        {/* seat card */}
-        <div
-          style={{
-            width: '100%',
-            background: '#fff',
-            color: 'var(--navy)',
-            borderRadius: 24,
-            marginTop: 26,
-            padding: '24px 22px',
-            boxShadow: '0 18px 40px rgba(0,0,0,.28)',
-            animation: 'rr-rise .5s ease both',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              color: 'var(--ice-deep)',
-              fontWeight: 800,
-              fontSize: 12.5,
-              letterSpacing: 1.2,
-              textTransform: 'uppercase',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon name="pin" size={15} sw={2.6} /> Your Seat
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 18 }}>
-            {(
-              [
-                ['Section', SEAT.section],
-                ['Row', SEAT.row],
-                ['Seat', SEAT.seat],
-              ] as const
-            ).map(([k, v], i) => (
-              <Fragment key={k}>
-                {i > 0 && <div style={{ width: 1, background: 'var(--line)' }} />}
-                <div style={{ textAlign: 'center', padding: '0 6px' }}>
-                  <div
-                    style={{
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: 'var(--muted)',
-                      letterSpacing: 0.6,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {k}
-                  </div>
-                  <div style={{ fontSize: 38, fontWeight: 800, lineHeight: 1.05, marginTop: 2 }}>{v}</div>
-                </div>
-              </Fragment>
-            ))}
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 16, fontSize: 14.5, color: 'var(--muted)', fontWeight: 600 }}>
-            Confirm your seat to start ordering
-          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.15, marginTop: 8 }}>{VENUE.name}</div>
+          <div style={{ fontSize: 15, color: 'rgba(255,255,255,.7)', marginTop: 6, fontWeight: 600 }}>{VENUE.event}</div>
         </div>
       </div>
 
       <div style={{ padding: '16px 24px max(30px, env(safe-area-inset-bottom))', position: 'relative', zIndex: 2 }}>
-        <CTA label="This is my seat" icon="check" onClick={() => s.nav('menu')} />
-        <button
-          onClick={() => s.toast('Seat editing is disabled in this demo')}
-          style={{ width: '100%', marginTop: 14, fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,.75)' }}
-        >
-          Change seat
-        </button>
+        <CTA label="Continue" icon="arrowR" onClick={() => s.nav('zone')} />
       </div>
     </div>
   )

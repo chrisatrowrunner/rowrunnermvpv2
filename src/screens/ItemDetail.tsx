@@ -1,42 +1,31 @@
 // ItemDetail.tsx — Screen 3: options, add-ons, quantity, add to cart.
 import { useState, type ReactNode } from 'react'
 import { useStore } from '../store/store'
-import { money, vendorsFor, optionsFor, extrasFor } from '../data/menu'
+import { money, RESTAURANT } from '../data/menu'
 import { Icon } from '../components/Icon'
 import { RoundBtn, FoodTile, Tag, QtyStepper, BottomDock, CTA } from '../components/ui'
 import type { MenuItem } from '../types'
 
 export function ItemScreen({ item }: { item: MenuItem }) {
   const s = useStore()
-  const vendors = vendorsFor(item)
-  const [vendorIdx, setVendorIdx] = useState(0) // fastest by default
   const [opt, setOpt] = useState<number | null>(item.options ? 0 : null)
   const [addons, setAddons] = useState<Record<number, boolean>>({})
   const [qty, setQty] = useState(1)
 
-  const vendor = vendors[vendorIdx]
-  // Flavors + extras are the chosen restaurant's, not the item's.
-  const options = vendor ? optionsFor(item, vendor.id) : item.options
-  const extras = vendor ? extrasFor(item, vendor.id) : item.addons
+  const options = item.options
+  const extras = item.addons
 
   const optDelta = options && opt !== null ? options.choices[opt].d : 0
   const addDelta = extras.reduce((acc, a, i) => acc + (addons[i] ? a.d : 0), 0)
   const unit = item.price + optDelta + addDelta
   const total = unit * qty
 
-  // Switching restaurants changes the available flavors/extras — reset the picks.
-  const selectVendor = (i: number) => {
-    setVendorIdx(i)
-    setOpt(item.options ? 0 : null)
-    setAddons({})
-  }
-
   const submit = () => {
     s.addToCart({
       item,
       qty,
-      vendor: vendor ? vendor.name : '',
-      etaMin: vendor ? vendor.etaMin : 0,
+      vendor: RESTAURANT.name,
+      etaMin: item.etaMin,
       option: options && opt !== null ? options.choices[opt].name : null,
       addons: extras.filter((_, i) => addons[i]).map((a) => a.name),
       lineTotal: total,
@@ -68,43 +57,13 @@ export function ItemScreen({ item }: { item: MenuItem }) {
           <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--navy)', whiteSpace: 'nowrap' }}>{money(item.price)}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, color: 'var(--ice-deep)', fontSize: 13.5, fontWeight: 700 }}>
-          <Icon name="clock" size={15} sw={2.4} /> {vendors.length} spots nearby · from {vendors[0].etaMin} min
+          <Icon name="clock" size={15} sw={2.4} /> {RESTAURANT.name} · ~{item.etaMin} min to your seat
         </div>
         <p style={{ marginTop: 12, fontSize: 15, lineHeight: 1.55, color: 'var(--muted)', fontWeight: 500, textWrap: 'pretty' }}>
           {item.desc}
         </p>
 
-        {/* where to order from — restaurants serving this item, each with its ETA */}
-        <Section title="Where to order from" required>
-          {vendors.map((v, i) => (
-            <Row key={v.id} onClick={() => selectVendor(i)}>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontWeight: 800, color: 'var(--navy)', fontSize: 15.5 }}>{v.name}</span>
-                <span style={{ display: 'block', color: 'var(--muted)', fontWeight: 600, fontSize: 12.5, marginTop: 1 }}>{v.loc}</span>
-              </span>
-              <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, flex: '0 0 auto' }}>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    fontSize: 12.5,
-                    fontWeight: 800,
-                    color: 'var(--ice-deep)',
-                    background: 'rgba(91,184,212,.16)',
-                    padding: '5px 9px',
-                    borderRadius: 999,
-                  }}
-                >
-                  <Icon name="clock" size={13} sw={2.6} /> {v.etaMin} min
-                </span>
-                <Radio on={vendorIdx === i} />
-              </span>
-            </Row>
-          ))}
-        </Section>
-
-        {/* options — flavors are the chosen restaurant's */}
+        {/* options */}
         {options && (
           <Section title={options.label} required>
             {options.choices.map((c, i) => (
@@ -119,9 +78,9 @@ export function ItemScreen({ item }: { item: MenuItem }) {
           </Section>
         )}
 
-        {/* addons — extras are the chosen restaurant's */}
+        {/* addons */}
         {extras.length > 0 && (
-          <Section title={`Extras from ${vendor ? vendor.name : 'this spot'}`} optional>
+          <Section title="Add extras" optional>
             {extras.map((a, i) => (
               <Row key={i} onClick={() => setAddons((s2) => ({ ...s2, [i]: !s2[i] }))}>
                 <span style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 15.5 }}>{a.name}</span>
