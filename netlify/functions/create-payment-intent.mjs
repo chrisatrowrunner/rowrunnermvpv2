@@ -14,6 +14,8 @@ import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
 const SUPABASE_ANON = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+// Accept either name — the canonical STRIPE_SECRET_KEY or a plain SECRET_KEY.
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || process.env.SECRET_KEY
 
 // fee formula — mirrors the fan app's totals() (service 10.5% + $2 delivery + 7% tax)
 const SERVICE_RATE = 0.105
@@ -29,7 +31,7 @@ const json = (statusCode, obj) => ({
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method not allowed' })
-  if (!process.env.STRIPE_SECRET_KEY) return json(500, { error: 'Payments are not configured' })
+  if (!STRIPE_SECRET) return json(500, { error: 'Payments are not configured' })
 
   let body
   try {
@@ -70,7 +72,7 @@ export const handler = async (event) => {
   const amount = subtotal + service + delivery + tax + tip
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+    const stripe = new Stripe(STRIPE_SECRET)
     const pi = await stripe.paymentIntents.create({
       amount,
       currency: 'usd',
