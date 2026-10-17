@@ -4,6 +4,8 @@ import { useStore } from '../store/store'
 import { money } from '../data/menu'
 import { Icon } from '../components/Icon'
 import { AppHeader, RoundBtn, BottomDock, CTA } from '../components/ui'
+import { StripeCheckout } from '../components/StripeCheckout'
+import { hasStripe } from '../lib/payments'
 
 const TIPS = [0.15, 0.2, 0.25]
 
@@ -14,12 +16,17 @@ export function CheckoutScreen() {
   const [openSummary, setOpenSummary] = useState(false)
   const [tipSel, setTipSel] = useState<TipSel>(1) // index into TIPS, or 'custom'
   const [customTip, setCustomTip] = useState('')
-  const [card, setCard] = useState('')
 
   const base = s.totals()
   const tipAmt = tipSel === 'custom' ? parseFloat(customTip) || 0 : base.subtotal * TIPS[tipSel]
   const grand = base.total + tipAmt
   const itemCount = s.cart.reduce((n, l) => n + l.qty, 0)
+
+  // what the server needs to price + charge the order
+  const payLines = s.cart.map((l) => ({ itemId: l.item.id, option: l.option, addons: l.addons, qty: l.qty }))
+  const tipCents = Math.round(tipAmt * 100)
+  const amountCents = Math.round(grand * 100)
+  const canPay = s.customerName.trim().length > 0 && s.cart.length > 0
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--offwhite)' }}>
@@ -128,62 +135,43 @@ export function CheckoutScreen() {
         </SectionCard>
 
         {/* payment */}
-        <SectionCard title="Payment">
-          <button
-            onClick={() => s.placeOrder()}
-            style={{ width: '100%', height: 52, borderRadius: 13, background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontWeight: 700, fontSize: 18 }}
-          >
-            <svg width="17" height="21" viewBox="0 0 384 512" fill="#fff" style={{ marginTop: -2 }}>
-              <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
-            </svg>
-            Pay
-          </button>
-          <button
-            onClick={() => s.placeOrder()}
-            style={{ width: '100%', height: 52, borderRadius: 13, marginTop: 10, background: '#fff', boxShadow: 'inset 0 0 0 1.5px var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, fontWeight: 700, fontSize: 16, color: '#3c4043' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9c-.3 1.4-1 2.5-2.2 3.3v2.8h3.6c2.1-1.9 3.2-4.7 3.2-8.1z" />
-              <path fill="#34A853" d="M12 23c2.9 0 5.4-1 7.2-2.6l-3.6-2.8c-1 .7-2.3 1.1-3.6 1.1-2.8 0-5.1-1.9-6-4.4H2.3v2.9C4.1 20.8 7.8 23 12 23z" />
-              <path fill="#FBBC05" d="M6 14.3c-.2-.7-.4-1.4-.4-2.3s.1-1.6.4-2.3V6.8H2.3C1.5 8.3 1 10.1 1 12s.5 3.7 1.3 5.2L6 14.3z" />
-              <path fill="#EA4335" d="M12 5.3c1.6 0 3 .5 4.1 1.6l3.1-3.1C17.4 2 14.9 1 12 1 7.8 1 4.1 3.2 2.3 6.8L6 9.7c.9-2.5 3.2-4.4 6-4.4z" />
-            </svg>
-            Pay
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
-            <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--faint)' }}>or pay with card</span>
-            <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--offwhite)', borderRadius: 12, padding: '0 14px', height: 50 }}>
-            <svg width="26" height="18" viewBox="0 0 26 18">
-              <rect width="26" height="18" rx="3" fill="#1A2A6C" opacity=".12" />
-              <rect y="3.5" width="26" height="3.5" fill="var(--navy)" opacity=".5" />
-            </svg>
-            <input
-              value={card}
-              onChange={(e) => setCard(formatCard(e.target.value))}
-              inputMode="numeric"
-              placeholder="Card number"
-              maxLength={19}
-              style={{ border: 'none', outline: 'none', background: 'transparent', flex: 1, fontSize: 15.5, fontWeight: 700, color: 'var(--navy)' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-            <input placeholder="MM / YY" style={fieldStyle} />
-            <input placeholder="CVC" inputMode="numeric" maxLength={4} style={fieldStyle} />
-          </div>
+        <SectionCard title="Payment" sub={hasStripe ? 'Apple Pay, Google Pay, or card' : undefined}>
+          {hasStripe ? (
+            canPay ? (
+              <StripeCheckout
+                lines={payLines}
+                tipCents={tipCents}
+                amountCents={amountCents}
+                onPaid={(pi) => s.placeOrder(pi)}
+              />
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--muted)' }}>
+                Enter your name above to continue to payment.
+              </div>
+            )
+          ) : (
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--muted)', marginBottom: 12 }}>
+                Demo mode — no live payments configured. You can place the order directly.
+              </div>
+              <CTA label="Place order (demo)" icon="check" disabled={!canPay} onClick={() => s.placeOrder()} />
+            </div>
+          )}
         </SectionCard>
       </div>
 
       <BottomDock>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--muted)' }}>
             Total {tipAmt > 0 ? `(incl. ${money(tipAmt)} tip)` : ''}
           </span>
           <span style={{ fontSize: 21, fontWeight: 800, color: 'var(--navy)' }}>{money(grand)}</span>
         </div>
-        <CTA label="Place Order" sub={`· ${money(grand)}`} icon="check" onClick={() => s.placeOrder()} />
+        {hasStripe && (
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--faint)', textAlign: 'center', marginTop: 8 }}>
+            Complete payment above to place your order
+          </div>
+        )}
       </BottomDock>
     </div>
   )
@@ -212,13 +200,6 @@ const fieldStyle: CSSProperties = {
   fontWeight: 700,
   color: 'var(--navy)',
 }
-
-const formatCard = (v: string): string =>
-  v
-    .replace(/\D/g, '')
-    .slice(0, 16)
-    .replace(/(.{4})/g, '$1 ')
-    .trim()
 
 function SectionCard({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (

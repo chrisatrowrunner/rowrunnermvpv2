@@ -78,6 +78,8 @@ export interface EdgeOrderInput {
   code: string
   /** special instructions / dietary notes from the guest (may be empty) */
   notes: string
+  /** Stripe PaymentIntent id once paid (undefined in demo/no-payment mode) */
+  paymentRef?: string
   seat: Seat
   /** where the runner picks up — the order's primary (slowest) stand */
   stand: { name: string; loc: string }
@@ -117,6 +119,7 @@ export async function submitOrder(input: EdgeOrderInput): Promise<void> {
       customer_name: input.customerName,
       code: input.code,
       notes: input.notes || null,
+      payment_ref: input.paymentRef ?? null,
       seat: input.seat,
       stand: input.stand,
       lines: input.lines,

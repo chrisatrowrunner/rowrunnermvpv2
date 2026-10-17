@@ -89,7 +89,7 @@ export interface Store {
   orderCode: string | null
   /** name of the runner delivering, once they've claimed it */
   runnerName: string | null
-  placeOrder: () => void
+  placeOrder: (paymentRef?: string) => void
   reset: () => void
   exit: () => void
   // chrome
@@ -287,7 +287,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return [...map.values()].sort((a, b) => a.etaMin - b.etaMin)
   }
 
-  const placeOrder = () => {
+  const placeOrder = (paymentRef?: string) => {
     const name = customerName.trim()
     if (!name) {
       toast('Add your name so the runner knows who to find')
@@ -335,6 +335,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       customerName: name,
       code,
       notes: orderNotes.trim(),
+      paymentRef,
       seat,
       stand: { name: RESTAURANT.name, loc: RESTAURANT.loc },
       lines: cart.map((l) => ({
