@@ -12,8 +12,15 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-const SUPABASE_ANON = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+// Public Supabase project values (anon key is public by design). Env vars take
+// precedence; the literals are fallbacks since build env isn't guaranteed to
+// reach the function runtime.
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://kboevpucqjoftgmhrkzq.supabase.co'
+const SUPABASE_ANON =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtib2V2cHVjcWpvZnRnbWhya3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5Mjk0OTUsImV4cCI6MjA5NjUwNTQ5NX0.T6W1QPUrVIqXsGog5axDlDneTUwZJnYu_JClIDVCkPc'
 // Accept either name — the canonical STRIPE_SECRET_KEY or a plain SECRET_KEY.
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || process.env.SECRET_KEY
 
