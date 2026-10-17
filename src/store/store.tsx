@@ -331,6 +331,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     submitOrder({
       id,
       venueId: import.meta.env.VITE_VENUE_ID || 'uri-mens-soccer',
+      eventId: import.meta.env.VITE_EVENT_ID || 'uri-lasalle-msoc',
       customerName: name,
       code,
       notes: orderNotes.trim(),

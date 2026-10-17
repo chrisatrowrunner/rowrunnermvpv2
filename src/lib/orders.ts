@@ -70,6 +70,8 @@ export interface EdgeOrderInput {
   /** client-generated id, so the (anon) fan can poll its own order's status */
   id: string
   venueId: string
+  /** which event (game) this order belongs to — scopes the runner/KDS queues */
+  eventId: string
   /** the guest's name — shown to the runner */
   customerName: string
   /** 6-digit handoff code the runner must enter to confirm delivery */
@@ -111,6 +113,7 @@ export async function submitOrder(input: EdgeOrderInput): Promise<void> {
     const { error } = await sb.from('orders').insert({
       id: input.id,
       venue_id: input.venueId,
+      event_id: input.eventId,
       customer_name: input.customerName,
       code: input.code,
       notes: input.notes || null,
