@@ -18,10 +18,9 @@
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtib2V2cHVjcWpvZnRnbWhya3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5Mjk0OTUsImV4cCI6MjA5NjUwNTQ5NX0.T6W1QPUrVIqXsGog5axDlDneTUwZJnYu_JClIDVCkPc"
   VITE_VENUE_ID = "uri-mens-soccer"
   VITE_EVENT_ID = "uri-lasalle-msoc"
-  # Stripe publishable key is public (ships in the browser). Test key for now;
-  # swap to pk_live_… at go-live. The SECRET key (STRIPE_SECRET_KEY) must be set
-  # in Netlify's UI, never here.
-  VITE_STRIPE_PUBLISHABLE_KEY = "pk_test_51URPUb6iLrLSyhKN0tVwl4RIVoq2ypz8Vr8119luCLjiBbzBiNBsYzugMz4pemWwcf7KQaItzU2sbpeWZsYRrgm600VTGuga65"
+  # Stripe publishable key is public (ships in the browser). LIVE key — must be
+  # the same mode as the SECRET key (sk_live_…) set in Netlify's UI as SECRET_KEY.
+  VITE_STRIPE_PUBLISHABLE_KEY = "pk_live_51URPUb6iLrLSyhKNLY39oB82nTYDqQVH20Ei8t8H5h6FCdqdr2H5Pbjg7X7cxvCxswoHuq3Kf44kLUEwN8JRPe0T00j5Krmfl2"
 
 # SPA routing — send all paths to index.html so client-side routes work
 [[redirects]]
