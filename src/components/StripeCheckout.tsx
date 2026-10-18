@@ -10,7 +10,7 @@ import {
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js'
-import { stripePromise, createPaymentIntent, type PayLine } from '../lib/payments'
+import { stripePromise, createPaymentIntent, type PayLine, type OrderContext } from '../lib/payments'
 import { CTA } from './ui'
 
 interface Props {
@@ -18,10 +18,12 @@ interface Props {
   tipCents: number
   /** display amount (cents) for the wallet sheet; the real charge is server-side */
   amountCents: number
+  /** seat/customer/notes stamped onto the payment metadata */
+  ctx?: OrderContext
   onPaid: (paymentIntentId: string) => void
 }
 
-function Inner({ lines, tipCents, onPaid }: Props) {
+function Inner({ lines, tipCents, ctx, onPaid }: Props) {
   const stripe = useStripe()
   const elements = useElements()
   const [busy, setBusy] = useState(false)
@@ -39,7 +41,7 @@ function Inner({ lines, tipCents, onPaid }: Props) {
         setBusy(false)
         return
       }
-      const { clientSecret } = await createPaymentIntent(lines, tipCents)
+      const { clientSecret } = await createPaymentIntent(lines, tipCents, ctx)
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         clientSecret,

@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon'
 import { AppHeader, RoundBtn, BottomDock, CTA } from '../components/ui'
 import { StripeCheckout } from '../components/StripeCheckout'
 import { hasStripe } from '../lib/payments'
+import { seatLines } from '../lib/seat'
 
 const TIPS = [0.15, 0.2, 0.25]
 
@@ -22,11 +23,23 @@ export function CheckoutScreen() {
   const grand = base.total + tipAmt
   const itemCount = s.cart.reduce((n, l) => n + l.qty, 0)
 
-  // what the server needs to price + charge the order
-  const payLines = s.cart.map((l) => ({ itemId: l.item.id, option: l.option, addons: l.addons, qty: l.qty }))
+  // what the server needs to price + charge the order (name drives the items summary)
+  const payLines = s.cart.map((l) => ({
+    itemId: l.item.id,
+    name: l.item.name,
+    option: l.option,
+    addons: l.addons,
+    qty: l.qty,
+  }))
   const tipCents = Math.round(tipAmt * 100)
   const amountCents = Math.round(grand * 100)
   const canPay = s.customerName.trim().length > 0 && s.cart.length > 0
+  // seat/customer/notes → stamped on the payment for the vendor + records
+  const ctx = {
+    seatText: s.seat ? seatLines(s.seat).text : '',
+    customerName: s.customerName.trim(),
+    notes: s.orderNotes.trim(),
+  }
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--offwhite)' }}>
@@ -142,6 +155,7 @@ export function CheckoutScreen() {
                 lines={payLines}
                 tipCents={tipCents}
                 amountCents={amountCents}
+                ctx={ctx}
                 onPaid={(pi) => s.placeOrder(pi)}
               />
             ) : (

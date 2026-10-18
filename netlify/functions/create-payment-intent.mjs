@@ -85,22 +85,42 @@ export const handler = async (event) => {
   try {
     const stripe = new Stripe(STRIPE_SECRET)
     const usd = (c) => (c / 100).toFixed(2)
+    const clip = (s) => String(s || '').slice(0, 480)
+
+    // Human-readable list of what was ordered, e.g.
+    // "2× Classic Cheeseburger (Double, Bacon) · 1× French Fries (Large)"
+    const itemsText = lines
+      .map((l) => {
+        const extras = [l.option, ...(Array.isArray(l.addons) ? l.addons : [])].filter(Boolean).join(', ')
+        const qty = Math.max(1, Math.min(20, Math.round(Number(l.qty) || 1)))
+        return `${qty}× ${l.name || l.itemId}${extras ? ` (${extras})` : ''}`
+      })
+      .join(' · ')
+      .slice(0, 480)
+    const itemCount = lines.reduce((n, l) => n + Math.max(1, Math.min(20, Math.round(Number(l.qty) || 1))), 0)
+
+    // Stamped on every payment: the vendor cut (so you can settle manually) plus
+    // what/where/who, so the Stripe dashboard + CSV export double as an order log.
+    const metadata = {
+      venue_id: 'uri-mens-soccer',
+      event_id: 'uri-lasalle-msoc',
+      vendor: "Pam's Grill",
+      vendor_base_usd: usd(subtotal), // ← pay this to Pam's
+      platform_fees_usd: usd(service + delivery + tax),
+      tip_usd: usd(tip),
+      order_total_usd: usd(amount),
+      items: itemsText || '—',
+      item_count: String(itemCount),
+    }
+    if (body.seatText) metadata.seat = clip(body.seatText)
+    if (body.customerName) metadata.customer = clip(body.customerName)
+    if (body.notes) metadata.notes = clip(body.notes)
+
     const params = {
       amount,
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
-      // Breakdown stamped on every payment so you can see — and manually settle —
-      // the vendor's cut in the Stripe dashboard (and CSV exports). Money all lands
-      // in your account; "vendor_base_usd" is what you owe Pam's Grill.
-      metadata: {
-        venue_id: 'uri-mens-soccer',
-        event_id: 'uri-lasalle-msoc',
-        vendor: "Pam's Grill",
-        vendor_base_usd: usd(subtotal), // ← pay this to Pam's
-        platform_fees_usd: usd(service + delivery + tax),
-        tip_usd: usd(tip),
-        order_total_usd: usd(amount),
-      },
+      metadata,
     }
     // Revenue split (Stripe Connect destination charge): the vendor is paid the
     // food base; RowRunner keeps everything above it (fees + tip) as the
