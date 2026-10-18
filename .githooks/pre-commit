@@ -1,0 +1,8 @@
+#!/bin/sh
+# Block committing Stripe secret keys (or similar) to the repo.
+# Secrets belong ONLY in Netlify env vars (Functions-scoped), never in git.
+if git diff --cached -U0 | grep -nE 'sk_(live|test)_[A-Za-z0-9]{16,}' >/dev/null; then
+  echo "✖ Commit blocked: a Stripe SECRET key (sk_live_/sk_test_) is in your staged changes."
+  echo "  Secret keys must live only in Netlify env vars (Functions scope), never in the repo."
+  exit 1
+fi
