@@ -28,6 +28,7 @@ function Inner({ lines, tipCents, ctx, onPaid }: Props) {
   const elements = useElements()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [wallets, setWallets] = useState<string>('checking…') // diagnostic
 
   // Shared confirm path for both the wallet buttons and the card "Pay" button.
   const confirm = async (): Promise<void> => {
@@ -68,7 +69,23 @@ function Inner({ lines, tipCents, ctx, onPaid }: Props) {
   return (
     <div>
       {/* Apple Pay / Google Pay (renders only on supported devices) */}
-      <ExpressCheckoutElement onConfirm={confirm} />
+      <ExpressCheckoutElement
+        onConfirm={confirm}
+        onReady={(e) =>
+          setWallets(
+            e.availablePaymentMethods
+              ? Object.entries(e.availablePaymentMethods)
+                  .map(([k, v]) => `${k}:${v ? 'yes' : 'no'}`)
+                  .join('  ')
+              : 'none available',
+          )
+        }
+        onLoadError={(e) => setWallets('load error: ' + (e?.error?.message ?? 'unknown'))}
+      />
+      {/* TEMP diagnostic — which express wallets Stripe reports for this device */}
+      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--faint)', marginTop: 6 }}>
+        wallets → {wallets}
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
         <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
