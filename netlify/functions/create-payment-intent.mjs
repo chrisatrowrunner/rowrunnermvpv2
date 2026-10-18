@@ -23,6 +23,10 @@ const SUPABASE_ANON =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtib2V2cHVjcWpvZnRnbWhya3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5Mjk0OTUsImV4cCI6MjA5NjUwNTQ5NX0.T6W1QPUrVIqXsGog5axDlDneTUwZJnYu_JClIDVCkPc'
 // Accept either name — the canonical STRIPE_SECRET_KEY or a plain SECRET_KEY.
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY || process.env.SECRET_KEY
+// The vendor's Stripe Connect account (e.g. acct_… for Pam's Grill). When set,
+// each charge is split: the vendor receives the food base, RowRunner keeps the
+// fees as an application fee. Unset → all funds go to the platform (no split).
+const VENDOR_ACCOUNT = process.env.PAMS_GRILL_ACCOUNT || process.env.VENDOR_ACCOUNT
 
 // fee formula — mirrors the fan app's totals() (service 10.5% + $2 delivery + 7% tax)
 const SERVICE_RATE = 0.105
@@ -80,12 +84,21 @@ export const handler = async (event) => {
 
   try {
     const stripe = new Stripe(STRIPE_SECRET)
-    const pi = await stripe.paymentIntents.create({
+    const params = {
       amount,
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: { venue_id: 'uri-mens-soccer', event_id: 'uri-lasalle-msoc' },
-    })
+    }
+    // Revenue split (Stripe Connect destination charge): the vendor is paid the
+    // food base; RowRunner keeps everything above it (fees + tip) as the
+    // application fee. Stripe's processing fee comes out of the application fee
+    // (the platform), so the vendor always receives the full base amount.
+    if (VENDOR_ACCOUNT) {
+      params.transfer_data = { destination: VENDOR_ACCOUNT }
+      params.application_fee_amount = amount - subtotal // = service + delivery + tax + tip
+    }
+    const pi = await stripe.paymentIntents.create(params)
     return json(200, { clientSecret: pi.client_secret, amount, paymentIntentId: pi.id })
   } catch (e) {
     return json(502, { error: e instanceof Error ? e.message : 'Payment provider error' })
