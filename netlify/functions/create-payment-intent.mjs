@@ -84,11 +84,23 @@ export const handler = async (event) => {
 
   try {
     const stripe = new Stripe(STRIPE_SECRET)
+    const usd = (c) => (c / 100).toFixed(2)
     const params = {
       amount,
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
-      metadata: { venue_id: 'uri-mens-soccer', event_id: 'uri-lasalle-msoc' },
+      // Breakdown stamped on every payment so you can see — and manually settle —
+      // the vendor's cut in the Stripe dashboard (and CSV exports). Money all lands
+      // in your account; "vendor_base_usd" is what you owe Pam's Grill.
+      metadata: {
+        venue_id: 'uri-mens-soccer',
+        event_id: 'uri-lasalle-msoc',
+        vendor: "Pam's Grill",
+        vendor_base_usd: usd(subtotal), // ← pay this to Pam's
+        platform_fees_usd: usd(service + delivery + tax),
+        tip_usd: usd(tip),
+        order_total_usd: usd(amount),
+      },
     }
     // Revenue split (Stripe Connect destination charge): the vendor is paid the
     // food base; RowRunner keeps everything above it (fees + tip) as the
