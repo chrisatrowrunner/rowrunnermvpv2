@@ -1,7 +1,7 @@
 // Menu.tsx — Screen 3: Pam's Grill menu, dietary filters, quick-add.
 import { useState } from 'react'
 import { useStore } from '../store/store'
-import { MENU, RESTAURANT, money, dietFor, etaRange } from '../data/menu'
+import { MENU, SECTIONS, RESTAURANT, money, dietFor, etaRange } from '../data/menu'
 import { Icon } from '../components/Icon'
 import { AppHeader, RoundBtn, SeatPill, FoodTile, Tag } from '../components/ui'
 import { AllergenSheet } from '../components/AllergenSheet'
@@ -156,10 +156,21 @@ export function MenuScreen() {
             <div style={{ fontSize: 13.5, marginTop: 6, fontWeight: 600 }}>Try removing a dietary filter.</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {items.map((it) => (
-              <MenuRow key={it.id} item={it} />
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            {SECTIONS.map((sec) => {
+              const inSec = items.filter((it) => it.section === sec)
+              if (!inSec.length) return null
+              return (
+                <section key={sec}>
+                  <h2 style={{ margin: '0 2px 10px', fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>{sec}</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {inSec.map((it) => (
+                      <MenuRow key={it.id} item={it} />
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
           </div>
         )}
       </div>

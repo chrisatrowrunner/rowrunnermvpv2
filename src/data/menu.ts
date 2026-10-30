@@ -57,57 +57,80 @@ export const TINTS: Record<TintKey, string> = {
   slate: 'linear-gradient(135deg,#E9EEF3,#D7E0E9)',
 }
 
-// Placeholder menu — generic American food-truck fare until Pam's real menu
-// (items, prices, and allergen info) is confirmed.
+// Pam's Grill's real menu (from the menu sheet at the truck). Prices are the
+// sheet's; the sheet lists no options/add-ons, so none are invented here —
+// the only choice is which drink. Descriptions are ours (the sheet has none).
+//
+// PRICES ARE CHARGED FROM SUPABASE `menu_prices`, not from here. After editing
+// this list, regenerate the SQL (`npm run menu:sql > supabase/menu-prices.sql`),
+// run it in Supabase, THEN deploy — an item missing from menu_prices fails at
+// checkout with "Unknown item".
+export const SECTIONS = [
+  "Pam's Specialties",
+  'Burgers & Dogs',
+  'Chicken',
+  'Bites & Apps',
+  'Sides',
+  'Sweets & Snacks',
+  'Drinks',
+] as const
+
+const item = (
+  id: string,
+  section: (typeof SECTIONS)[number],
+  name: string,
+  price: number,
+  emoji: string,
+  tint: TintKey,
+  etaMin: number,
+  desc: string,
+  extra: Partial<MenuItem> = {},
+): MenuItem => ({ id, section, name, price, emoji, tint, etaMin, desc, tag: null, options: null, addons: [], ...extra })
+
 export const MENU: MenuItem[] = [
-  {
-    id: 'cheeseburger', name: 'Classic Cheeseburger', emoji: '🍔', price: 10.0, etaMin: 12, tint: 'butter', tag: 'Fan favorite',
-    desc: 'Griddled beef patty, American cheese, lettuce, tomato, pickles, and house sauce on a toasted bun.',
-    options: { label: 'Size', required: true, choices: [{ name: 'Single', d: 0 }, { name: 'Double', d: 3.0 }] },
-    addons: [{ name: 'Bacon', d: 2.0 }, { name: 'Extra Cheese', d: 1.0 }, { name: 'Grilled Onions', d: 0.5 }],
-  },
-  {
-    id: 'veggie-burger', name: 'Black Bean Veggie Burger', emoji: '🌱', price: 10.0, etaMin: 12, tint: 'mint', tag: null,
-    desc: 'House black bean patty with lettuce, tomato, red onion, and chipotle mayo on a toasted bun.',
-    options: null,
-    addons: [{ name: 'Add Cheese', d: 1.0 }, { name: 'Avocado', d: 1.5 }],
-  },
-  {
-    id: 'chicken-sandwich', name: 'Crispy Chicken Sandwich', emoji: '🥪', price: 10.5, etaMin: 12, tint: 'peach', tag: null,
-    desc: 'Buttermilk-fried chicken breast, pickles, and mayo on a brioche bun.',
-    options: { label: 'Style', required: true, choices: [{ name: 'Classic', d: 0 }, { name: 'Spicy', d: 0 }, { name: 'Buffalo', d: 0 }] },
-    addons: [{ name: 'Bacon', d: 2.0 }, { name: 'Add Cheese', d: 1.0 }],
-  },
-  {
-    id: 'hot-dog', name: 'All-Beef Hot Dog', emoji: '🌭', price: 6.0, etaMin: 8, tint: 'rose', tag: 'Quick',
-    desc: 'Grilled all-beef frank on a toasted roll. Ketchup, mustard, and relish on request.',
-    options: { label: 'Style', required: true, choices: [{ name: 'Plain', d: 0 }, { name: 'Chili Dog', d: 1.5 }, { name: 'Chili Cheese Dog', d: 2.0 }] },
-    addons: [{ name: 'Grilled Onions', d: 0.5 }, { name: 'Sauerkraut', d: 0.5 }],
-  },
-  {
-    id: 'chicken-tenders', name: 'Chicken Tenders', emoji: '🍗', price: 9.5, etaMin: 10, tint: 'peach', tag: null,
-    desc: 'Four golden chicken tenders with your choice of dipping sauce.',
-    options: { label: 'Dipping sauce', required: true, choices: [{ name: 'Honey Mustard', d: 0 }, { name: 'BBQ', d: 0 }, { name: 'Buffalo', d: 0 }, { name: 'Ranch', d: 0 }] },
-    addons: [{ name: 'Extra Sauce', d: 0.75 }, { name: 'Add Fries', d: 3.0 }],
-  },
-  {
-    id: 'fries', name: 'French Fries', emoji: '🍟', price: 4.5, etaMin: 7, tint: 'butter', tag: 'Quick',
-    desc: 'Crispy, lightly salted fries.',
-    options: { label: 'Size', required: true, choices: [{ name: 'Regular', d: 0 }, { name: 'Large', d: 2.0 }] },
-    addons: [{ name: 'Cheese Sauce', d: 1.5 }, { name: 'Cajun Seasoning', d: 0.5 }],
-  },
-  {
-    id: 'onion-rings', name: 'Onion Rings', emoji: '🧅', price: 5.5, etaMin: 8, tint: 'butter', tag: null,
-    desc: 'Beer-battered onion rings, fried golden.',
-    options: null,
-    addons: [{ name: 'Ranch', d: 0.75 }],
-  },
-  {
-    id: 'mozzarella-sticks', name: 'Mozzarella Sticks', emoji: '🧀', price: 7.0, etaMin: 8, tint: 'butter', tag: null,
-    desc: 'Six breaded mozzarella sticks with warm marinara.',
-    options: null,
-    addons: [{ name: 'Extra Marinara', d: 0.75 }],
-  },
+  // ── Pam's Specialties
+  item('specialty-burger', "Pam's Specialties", "Pam's Specialty Burger", 11, '🍔', 'rose', 14,
+    "Pam's signature burger, served on two glazed donuts.", { tag: "Pam's specialty" }),
+  item('lobster-rangoon', "Pam's Specialties", 'Lobster Rangoon', 15, '🦞', 'peach', 10,
+    'Crispy lobster rangoon, served with sweet chili sauce.'),
+  item('stuffies', "Pam's Specialties", 'Homemade Stuffies', 6, '🐚', 'sky', 8,
+    'Homemade Rhode Island stuffed quahogs.'),
+  // ── Burgers & Dogs
+  item('cheeseburger', 'Burgers & Dogs', 'Cheeseburger', 8, '🍔', 'butter', 12, 'A classic cheeseburger.'),
+  item('hamburger', 'Burgers & Dogs', 'Hamburger', 7, '🍔', 'butter', 12, 'A classic hamburger.'),
+  item('hot-dog', 'Burgers & Dogs', 'Hot Dog', 6, '🌭', 'rose', 6, 'A classic hot dog.'),
+  item('hot-wieners', 'Burgers & Dogs', 'Hot Wieners', 5, '🌭', 'rose', 6, 'Rhode Island–style hot wieners.'),
+  item('sausage-peppers-onions', 'Burgers & Dogs', 'Sausage, Peppers & Onions', 15, '🫑', 'mint', 12,
+    'Sausage with grilled peppers and onions.'),
+  // ── Chicken
+  item('chicken-tenders', 'Chicken', 'Chicken Tenders', 9, '🍗', 'peach', 10, 'Crispy fried chicken tenders.'),
+  item('chicken-wings', 'Chicken', 'Chicken Wings', 10, '🍖', 'peach', 12, 'Crispy fried chicken wings.'),
+  item('buffalo-chicken-balls', 'Chicken', 'Buffalo Chicken Balls', 15, '🧆', 'rose', 10, 'Fried buffalo chicken bites.'),
+  // ── Bites & Apps
+  item('beef-empanadas', 'Bites & Apps', 'Beef Empanadas', 12, '🥟', 'butter', 10, 'Golden fried beef empanadas.'),
+  item('mac-cheese-bites', 'Bites & Apps', 'Mac & Cheese Bites', 10, '🧀', 'butter', 9, 'Fried mac & cheese bites.'),
+  item('fried-ravioli', 'Bites & Apps', 'Fried Ravioli', 13, '🍝', 'rose', 10, 'Crispy fried ravioli.'),
+  item('rice-balls', 'Bites & Apps', 'Rice Balls', 12, '🍙', 'slate', 10, 'Fried rice balls.'),
+  item('jalapeno-poppers', 'Bites & Apps', 'Jalapeño Poppers', 9, '🌶️', 'mint', 9, 'Fried cheese-stuffed jalapeño poppers.'),
+  item('mozzarella-sticks', 'Bites & Apps', 'Mozzarella Sticks', 10, '🧀', 'butter', 9, 'Breaded, fried mozzarella sticks.'),
+  item('broccoli-cheese-bites', 'Bites & Apps', 'Broccoli & Cheese Bites', 9, '🥦', 'mint', 9, 'Fried broccoli & cheese bites.'),
+  item('zucchini-sticks', 'Bites & Apps', 'Zucchini Sticks', 9, '🥒', 'mint', 9, 'Breaded, fried zucchini sticks.'),
+  // ── Sides
+  item('fries', 'Sides', 'Fries', 6, '🍟', 'butter', 8, 'Crispy golden fries.'),
+  item('potato-tots', 'Sides', 'Potato Tots', 9, '🥔', 'butter', 8, 'Crispy potato tots.'),
+  item('onion-rings', 'Sides', 'Onion Rings', 9, '🧅', 'butter', 9, 'Crispy fried onion rings.'),
+  // ── Sweets & Snacks
+  item('doughboy', 'Sweets & Snacks', 'Large Doughboy', 10, '🍩', 'peach', 9, 'Rhode Island fried dough.'),
+  item('ice-cream', 'Sweets & Snacks', 'Novelty Ice Cream', 5, '🍦', 'sky', 3, 'A frozen novelty ice cream treat.'),
+  item('chips', 'Sweets & Snacks', 'Chips', 2, '🥔', 'butter', 3, 'A bag of chips.'),
+  // ── Drinks
+  item('drink', 'Drinks', 'Drink', 3, '🥤', 'sky', 3, 'Coke, Diet Coke, Sprite, Water, or Gatorade.', {
+    options: {
+      label: 'Choose your drink',
+      required: true,
+      choices: ['Coke', 'Diet Coke', 'Sprite', 'Water', 'Gatorade'].map((name) => ({ name, d: 0 })),
+    },
+  }),
 ]
 
 export const ALLERGENS = ['Gluten Free', 'Nut Free', 'Dairy Free', 'Vegetarian', 'Vegan']
@@ -121,17 +144,18 @@ export function etaRange(): string {
 }
 
 // ── Dietary tags (drives the dietary filter) ─────────────────
-// PLACEHOLDERS — confirm every tag with Pam's Grill before the game. Fryer oil
-// is usually shared, so nothing fried is tagged Gluten Free.
+// CONSERVATIVE PLACEHOLDERS — confirm with Pam's Grill. Only obvious cases are
+// tagged: no-meat items as Vegetarian, and only packaged drinks as GF / dairy-
+// free / vegan (fryer oil is shared with seafood and meat; batter has gluten).
+// Nothing is tagged Nut Free until Pam confirms it. Rice balls and fried
+// ravioli are left untagged because their fillings vary (often meat).
+const VEGETARIAN = [
+  'fries', 'potato-tots', 'onion-rings', 'zucchini-sticks', 'mozzarella-sticks', 'jalapeno-poppers',
+  'broccoli-cheese-bites', 'mac-cheese-bites', 'doughboy', 'ice-cream', 'chips',
+]
 const DIET: Record<string, string[]> = {
-  cheeseburger: ['Nut Free'],
-  'veggie-burger': ['Nut Free', 'Vegetarian'],
-  'chicken-sandwich': ['Nut Free'],
-  'hot-dog': ['Nut Free'],
-  'chicken-tenders': ['Nut Free'],
-  fries: ['Nut Free', 'Dairy Free', 'Vegetarian', 'Vegan'],
-  'onion-rings': ['Nut Free', 'Vegetarian'],
-  'mozzarella-sticks': ['Nut Free', 'Vegetarian'],
+  ...Object.fromEntries(VEGETARIAN.map((id) => [id, ['Vegetarian']])),
+  drink: ['Gluten Free', 'Dairy Free', 'Vegetarian', 'Vegan'],
 }
 
 export function dietFor(id: string): string[] {

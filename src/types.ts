@@ -36,6 +36,8 @@ export interface MenuItem {
   price: number
   /** prep + delivery estimate in minutes */
   etaMin: number
+  /** menu heading this item is listed under */
+  section: string
   tint: TintKey
   tag: string | null
   desc: string
