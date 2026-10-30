@@ -41,8 +41,8 @@ export const RESTAURANT: Restaurant = {
   name: "Pam's Grill",
   loc: 'Food truck · East gate, Tootell Rd',
   blurb: 'American grill · Food truck at the east gate',
-  // Drop the real logo at public/assets/pams-grill-logo.png — a monogram shows until then.
-  logo: '/assets/pams-grill-logo.png',
+  // 256px JPEG (37 KB) — a "PG" monogram shows if it ever fails to load.
+  logo: '/assets/pams-grill-logo.jpg',
 }
 
 // soft tinted tiles behind each emoji (cohesive, brand-adjacent pastels)

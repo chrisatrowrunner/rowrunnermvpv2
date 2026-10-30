@@ -232,13 +232,13 @@ export function MenuScreen() {
   )
 }
 
-/** Pam's Grill logo — shows a monogram until public/assets/pams-grill-logo.png exists. */
+/** Pam's Grill logo (round neon badge) — falls back to a "PG" monogram if it can't load. */
 function RestaurantLogo() {
   const [failed, setFailed] = useState(false)
   const box = {
-    width: 68,
-    height: 68,
-    borderRadius: 18,
+    width: 72,
+    height: 72,
+    borderRadius: '50%',
     flex: '0 0 auto',
     overflow: 'hidden',
     boxShadow: 'inset 0 0 0 1px var(--line)',
@@ -268,7 +268,7 @@ function RestaurantLogo() {
       src={RESTAURANT.logo}
       alt={`${RESTAURANT.name} logo`}
       onError={() => setFailed(true)}
-      style={{ ...box, objectFit: 'cover', background: '#fff' }}
+      style={{ ...box, objectFit: 'cover', background: '#2A2A2A', boxShadow: '0 4px 12px rgba(7,46,72,.22)' }}
     />
   )
 }
