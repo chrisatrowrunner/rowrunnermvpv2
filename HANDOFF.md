@@ -24,7 +24,9 @@ truck, **Pam's Grill** (“Pam's Grill On-The-Go”). Real payments are live
 > fan orders + pays → Kitchen Display (KDS) confirms → KDS marks ready → label
 > prints → runner claims → runner delivers (verified by a 6-digit code)
 
-The system is **five apps sharing one Supabase `orders` table**:
+The system is **five apps on one Supabase project**. Four of them (fan, runner,
+KDS, printer) share the `orders` table; the marketing site only uses the
+separate `waitlist_signups` table:
 
 | App | Folder (this Mac) | GitHub repo | Live at |
 |---|---|---|---|
